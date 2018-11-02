@@ -21,6 +21,8 @@ catch {::itcl::delete class IpConsole}
     public variable connectedSockets ""
 
     protected variable serverSock
+    protected variable clientSock {}
+    protected variable isBlocked false
 
     constructor {args} {
 		configure {*}$args
@@ -94,7 +96,11 @@ catch {::itcl::delete class IpConsole}
     # handle_remote_request - handle a request from a connected client
     #
     method handle_remote_request {sock} {
-		if {[eof $sock]} {
+		if {[catch {eof $sock} isEof]} {
+			# if we cannot check eof, then the remote closed
+			return
+		}
+		if {$isEof} {
 			log_message "EOF on $sock"
 			close_client_socket $sock
 			return
@@ -118,6 +124,9 @@ catch {::itcl::delete class IpConsole}
 					close_client_socket $sock
 					return
 				}
+				"continue" {
+					set isBlocked false
+				}
 
 				"!quit" {
 					# they want us to send a quit to the server
@@ -131,6 +140,10 @@ catch {::itcl::delete class IpConsole}
 
 				"!help" {
 					set line "help"
+				}
+
+				"!continue" {
+					set line "continue"
 				}
 			}
 
@@ -167,6 +180,29 @@ catch {::itcl::delete class IpConsole}
 			}
 			unset serverSock
 		}
+    }
+
+    #
+    # Send a message to a remote listening port.
+    # Connects to the port as needed
+    #
+    method send_out {arg {blocking true} {host 127.0.0.1} {port 8989}} {
+        if {$clientSock == {}} {
+            if { [catch {socket $host $port} clientSock]} {
+		# failure to open is ok
+		# caller can retry if needed
+		return 0
+	    }
+	    handle_connect_request $clientSock 127.0.0.1 0
+	}
+	wall $arg
+	if {$blocking} {
+	    set isBlocked true
+	    while {$isBlocked} {
+	        handle_remote_request $clientSock
+	    }
+        }
+	return 1
     }
 }
 
