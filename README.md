@@ -20,20 +20,19 @@ console setup_server -port 8888
 Accessing
 ---
 
-Once your program is up and running, you can connect to the specified TCP port with telnet or some other program, as in
+Once your program is up and running, you can connect to the specified TCP port with nc, telnet or some other program, as in
 
 ```
-telnet localhost 8888
+nc localhost 8888
 ```
 
 You will receive a greeting from the program, something that includes the program name ($::argv0), something like
 
 ```
-$ telnet localhost 6600
-Trying 127.0.0.1...
-Connected to localhost.localdomain.
-Escape character is '^]'.
-connect {feed_combiner - connect from 127.0.0.1 18849 - help for help}
+$ nc  localhost 8888
+connect {foo.tcl - connect from 127.0.0.1 44088 - help for help}
+set forever true
+ok true
 ```
 
 Using
